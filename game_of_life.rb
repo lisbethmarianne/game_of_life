@@ -11,14 +11,32 @@ class Game
   end
 
   def tick!
+    cells_live = []
+    cells_die = []
+
     world.cells.each do |cell|
 
       # Rule 1: Any live cell with fewer than two live neighbours dies, as if caused by under-population.
-      if cell.alive? and world.live_neighbours_around_cell(cell).count < 2
-        cell.die!
+      if cell.alive? && world.live_neighbours_around_cell(cell).count < 2
+        cells_die << cell
       end
 
+      # Rule 2: Any live cell with two or three live neighbours lives on to the next generation.
+      # -> nothing to change
+
+      # Rule 3: Any live cell with more than three live neighbours dies, as if by over-population.
+      if cell.alive? && world.live_neighbours_around_cell(cell).count > 3
+        cells_die << cell
+      end
+
+      # Rule 4: Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+      if cell.dead? && world.live_neighbours_around_cell(cell).count == 3
+        cells_live << cell
+      end
     end
+
+    cells_die.each { |c| c.die! }
+    cells_live.each { |c| c.live! }
   end
 end
 
@@ -117,5 +135,9 @@ class Cell
 
   def die!
     @alive = false
+  end
+
+  def live!
+    @alive = true
   end
 end
