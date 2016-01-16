@@ -3,29 +3,97 @@ class Game
 
   def initialize(world=World.new, seeds=[])
     @world = world
-    @seeds = seeds
+    @seeds = seeds    # seed = [[1,2],[0,2],[x,y]] -> x is the col, y is the row
 
     seeds.each do |seed|
-      world.cell_grid[seed[0]][seed[1]].alive = true
+      world.cell_grid[seed[1]][seed[0]].alive = true    # [row][col]
+    end
+  end
+
+  def tick!
+    world.cells.each do |cell|
+
+      # Rule 1: Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+      if cell.alive? and world.live_neighbours_around_cell(cell).count < 2
+        cell.die!
+      end
+
     end
   end
 end
 
 class World
-  attr_accessor :rows, :cols, :cell_grid
+  attr_accessor :rows, :cols, :cell_grid, :cells
 
   def initialize(rows=3, cols=3)
     @rows = rows
     @cols = cols
+    @cells = []
 
     # [[Cell.new(0,0), Cell.new(1,0), Cell.new(2,0)],
-    #  [Cell.new(1,0), Cell.new(1,1), Cell.new(1,2)],
-    #  [Cell.new(2,0), Cell.new(2,1), Cell.new(2,2)]]
+    #  [Cell.new(0,1), Cell.new(1,1), Cell.new(2,1)],
+    #  [Cell.new(0,2), Cell.new(1,2), Cell.new(2,2)]]
     @cell_grid = Array.new(rows) do |row|
-      Array.new(cols) do |col|
-        Cell.new(col, row)
-      end
+                  Array.new(cols) do |col|
+                    cell = Cell.new(col, row)
+                    cells << cell
+                    cell
+                  end
+                end
+  end
+
+  def live_neighbours_around_cell(cell)
+    live_neighbours = []
+
+    # detect neighbour to the north
+    if cell.y > 0   # not the upper row
+      candidate = self.cell_grid[cell.y - 1][cell.x]
+      live_neighbours << candidate if candidate.alive?
     end
+
+    # detect neighbour to the northeast
+    if cell.y > 0 && cell.x < (cols - 1)   #not the upper row and not the end of the row (last column)
+      candidate = self.cell_grid[cell.y - 1][cell.x + 1]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    # detect neighbour to the east
+    if cell.x < (cols - 1)   #not the end of the row (last column)
+      candidate = self.cell_grid[cell.y][cell.x + 1]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    # detect neighbour to the southeast
+    if cell.y < (rows - 1) && cell.x < (cols - 1)   #not the last row and the end of the row (last column)
+      candidate = self.cell_grid[cell.y + 1][cell.x + 1]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    # detect neighbour to the south
+    if cell.y < (rows - 1)   #not the last row
+      candidate = self.cell_grid[cell.y + 1][cell.x]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    # detect neighbour to the southwest
+    if cell.y < (rows - 1) && cell.x > 0   #not the last row and the first column
+      candidate = self.cell_grid[cell.y + 1][cell.x - 1]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    # detect neighbour to the west
+    if cell.x > 0   #not the first column
+      candidate = self.cell_grid[cell.y][cell.x - 1]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    # detect neighbour to the northwest
+    if cell.y > 0 && cell.x > 0   #not the last row and the first column
+      candidate = self.cell_grid[cell.y - 1][cell.x - 1]
+      live_neighbours << candidate if candidate.alive?
+    end
+
+    live_neighbours
   end
 end
 
@@ -41,5 +109,13 @@ class Cell
 
   def alive?
     alive
+  end
+
+  def dead?
+    !alive
+  end
+
+  def die!
+    @alive = false
   end
 end
